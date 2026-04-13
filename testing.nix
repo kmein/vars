@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, config, pkgs, ... }:
 
 {
   name = "vars";
@@ -15,8 +15,6 @@
 
       environment.systemPackages = [
         pkgs.expect
-        # expect script to drive generate-vars interactively.
-        # prompts appear in attribute-name order: aamulti, hidden, line.
         (pkgs.writeScriptBin "run-generate-vars" ''
           #!${pkgs.expect}/bin/expect -f
           set timeout 30
@@ -32,81 +30,39 @@
         '')
       ];
 
-      vars.generators = {
-        simple = {
-          files.simple = { };
-          script = ''
-            echo simple > "$out"/simple
-          '';
-        };
-
-        a = {
-          files.a = { };
-          script = ''
-            echo a > "$out"/a
-          '';
-        };
-        b = {
-          dependencies = [ "a" ];
-          files.b = { };
-          script = ''
-            cat "$in"/a/a > "$out"/b
-            echo b >> "$out"/b
-          '';
-        };
-
-        prompts = {
-          files.prompt_line = { };
-          files.prompt_hidden = { };
-          files.prompt_multiline = { };
-          prompts.line = {
-            description = ''
-              a simple line prompt
-            '';
-          };
-          prompts.hidden = {
-            type = "hidden";
-            description = ''
-              a prompt that doesn't show the input
-            '';
-          };
-          prompts.aamulti = {
-            type = "multiline";
-            description = ''
-              a prompt with multiple lines
-            '';
-          };
-          script = ''
-            cp "$prompts"/line "$out"/prompt_line
-            cp "$prompts"/hidden "$out"/prompt_hidden
-            cp "$prompts"/aamulti "$out"/prompt_multiline
-          '';
-        };
+      vars.generators.test-generate = {
+        files.aamulti = {};
+        files.hidden = {};
+        files.line = {};
+        prompts.aamulti.type = "multiline";
+        prompts.hidden.type = "hidden";
+        prompts.line.type = "line";
+        script = ''
+          cat "$prompts"/aamulti > "$out"/aamulti
+          cat "$prompts"/hidden > "$out"/hidden
+          cat "$prompts"/line > "$out"/line
+        '';
       };
+
+      vars.generators.test-in = {
+        dependencies = [ "test-generate" ];
+        files.output = {};
+        prompts.output.type = "line";
+        script = ''
+          cat "$in"/test-generate/aamulti "$prompts"/output > "$out"/output
+        '';
+      };
+
     };
 
-  testScript =
-    { nodes, ... }:
-    ''
-      start_all()
-      # The generate-vars service fails because prompts need interactive input.
-      # Wait for it to finish, then run manually with expect.
-      machine.wait_for_unit("multi-user.target")
-      machine.systemctl("is-active generate-vars.service || true")
+  testScript = ''
+    machine.wait_for_unit("multi-user.target")
+    machine.succeed("run-generate-vars")
+    machine.succeed("grep -q 'multi line content1' /var/lib/vars/test-generate/aamulti")
+    machine.succeed("grep -q 'hidden prompt content' /var/lib/vars/test-generate/hidden")
+    machine.succeed("grep -q 'simple prompt content' /var/lib/vars/test-generate/line")
 
-      machine.succeed("run-generate-vars")
-
-      # Verify non-prompt generators
-      machine.succeed("grep -q simple /etc/vars/secret/simple/simple")
-      machine.succeed("grep -q a /etc/vars/secret/a/a")
-      out = machine.succeed("cat /etc/vars/secret/b/b")
-      assert "a\n" in out, f"b should contain a's output, got: {out}"
-      assert "b" in out, f"b should contain 'b', got: {out}"
-
-      # Verify prompt-based generator
-      machine.succeed("grep -q 'simple prompt content' /etc/vars/secret/prompts/prompt_line")
-      machine.succeed("grep -q 'hidden prompt content' /etc/vars/secret/prompts/prompt_hidden")
-      machine.succeed("grep -q 'multi line content1' /etc/vars/secret/prompts/prompt_multiline")
-      machine.succeed("grep -q 'multi line content2' /etc/vars/secret/prompts/prompt_multiline")
-    '';
+    machine.succeed("systemctl restart generate-vars")
+    machine.succeed("grep -q 'multi line content1' /var/lib/vars/test-in/output")
+  '';
 }

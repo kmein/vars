@@ -14,6 +14,10 @@
       ];
       forAllSystems = lib.genAttrs supportedSystems;
     in {
+      packages = forAllSystems (system: {
+        secser = inputs.nixpkgs.legacyPackages.${system}.callPackage ./packages/secser {};
+      });
+
       nixosModules.default = { imports = [ ./options.nix ]; };
       nixosModules.backend-on-machine = { imports = [ ./backends/on-machine.nix ]; };
       nixosModules.backend-openbao = { imports = [ ./backends/openbao.nix ]; };
@@ -26,6 +30,12 @@
             imports = [
               ./options.nix
               ./testing.nix
+            ];
+          };
+          secser = inputs.nixpkgs.lib.nixos.runTest {
+            hostPkgs = inputs.nixpkgs.legacyPackages.${system};
+            imports = [
+              ./testing-secser.nix
             ];
           };
         };

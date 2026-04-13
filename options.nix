@@ -28,7 +28,7 @@
       '';
       default = { };
       type = lib.types.attrsOf (
-        lib.types.submodule (generator: {
+        lib.types.submodule ({ name, ... }@generator: {
           options = {
             name = lib.mkOption {
               type = lib.types.strMatching "[a-zA-Z0-9:_\\.-]*";
@@ -57,7 +57,7 @@
               '';
               defaultText = "attrs of files";
               type = lib.types.attrsOf (
-                lib.types.submodule (file: {
+                lib.types.submodule ({ name, ... }@file: {
                   imports = [
                     config.vars.settings.fileModule
                   ];
