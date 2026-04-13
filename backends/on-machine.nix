@@ -39,13 +39,17 @@ let
       ${lib.concatMapStringsSep "\n" (gen: ''
         all_files_missing=true
         all_files_present=true
+        found_files=""
+        missing_files=""
         echo "Checking vars for ${gen.name}..."
         ${lib.concatMapStringsSep "\n" (file: ''
           OUT_FILE="$OUT_DIR"/${if file.secret then "secret" else "public"}/${file.generator}/${file.name}
           if test -e "$OUT_FILE"; then
             all_files_missing=false
+            found_files="$found_files  $OUT_FILE\n"
           else
             all_files_present=false
+            missing_files="$missing_files  $OUT_FILE\n"
           fi
         '') (lib.attrValues gen.files)}
 
@@ -57,6 +61,11 @@ let
 
         if [ $all_files_missing = false ] && [ $all_files_present = false ] ; then
           echo "Inconsistent state for generator: ${gen.name}"
+          echo "The following files were found:"
+          printf "%b" "$found_files"
+          echo "The following files were missing:"
+          printf "%b" "$missing_files"
+          echo "You can try purging ''${OUT_DIR:-${cfg.fileLocation}}, after making sure it contains nothing you want to keep"
           exit 1
         fi
         if [ $all_files_present = true ] ; then

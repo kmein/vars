@@ -62,6 +62,8 @@ let
         ''
           all_files_missing=true
           all_files_present=true
+          found_files=""
+          missing_files=""
           echo "Checking vars for ${gen.name}..."
           ${lib.concatMapStringsSep "\n" (file: ''
             if bao kv get \
@@ -69,8 +71,10 @@ let
                 -field=content \
                 ${lib.escapeShellArg (kvPath gen file)} > /dev/null 2>&1; then
               all_files_missing=false
+              found_files="$found_files  ${lib.escapeShellArg (kvPath gen file)}\n"
             else
               all_files_present=false
+              missing_files="$missing_files  ${lib.escapeShellArg (kvPath gen file)}\n"
             fi
           '') (lib.attrValues gen.files)}
 
@@ -81,6 +85,11 @@ let
 
           if [ "$all_files_missing" = false ] && [ "$all_files_present" = false ]; then
             echo "Inconsistent state for generator: ${gen.name}"
+            echo "The following secrets were found:"
+            printf "%b" "$found_files"
+            echo "The following secrets were missing:"
+            printf "%b" "$missing_files"
+            echo "You can try purging the secrets for this generator at mount '${cfg.mount}' after making sure they contain nothing you want to keep"
             exit 1
           fi
           if [ "$all_files_present" = true ]; then
