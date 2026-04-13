@@ -46,7 +46,7 @@ let
         missing_files=""
         echo "Checking vars for ${gen.name}..."
         ${lib.concatMapStringsSep "\n" (file: ''
-          OUT_FILE="$OUT_DIR"/${if file.secret then "secret" else "public"}/${file.generator}/${file.name}
+          OUT_FILE="$OUT_DIR/${lib.removePrefix "${cfg.fileLocation}/" file.path}"
           if test -e "$OUT_FILE"; then
             all_files_missing=false
             found_files="$found_files  $OUT_FILE\n"
@@ -92,9 +92,7 @@ let
           ${lib.concatMapStringsSep "\n" (input: ''
             mkdir -p "$in"/${input}
             ${lib.concatMapStringsSep "\n" (file: ''
-              cp "$OUT_DIR"/${
-                if file.secret then "secret" else "public"
-              }/${input}/${file.name} "$in"/${input}/${file.name}
+              cp "$OUT_DIR/${lib.removePrefix "${cfg.fileLocation}/" file.path}" "$in"/${input}/${file.name}
             '') (lib.attrValues config.vars.generators.${input}.files)}
           '') gen.dependencies}
 
@@ -120,7 +118,7 @@ let
 
           # move the files to the correct location
           ${lib.concatMapStringsSep "\n" (file: ''
-            OUT_FILE="$OUT_DIR"/${if file.secret then "secret" else "public"}/${file.generator}/${file.name}
+            OUT_FILE="$OUT_DIR/${lib.removePrefix "${cfg.fileLocation}/" file.path}"
             mkdir -p "$(dirname "$OUT_FILE")"
             mv "$out"/${file.name} "$OUT_FILE"
           '') (lib.attrValues gen.files)}
@@ -128,7 +126,7 @@ let
 
         # move the files to the correct location
         ${lib.concatMapStringsSep "\n" (file: ''
-          OUT_FILE="$OUT_DIR"/${if file.secret then "secret" else "public"}/${file.generator}/${file.name}
+          OUT_FILE="$OUT_DIR/${lib.removePrefix "${cfg.fileLocation}/" file.path}"
           chown ${file.owner}:${file.group} "''${OUT_FILE}"
           chmod ${file.mode} "''${OUT_FILE}"
         '') (lib.attrValues gen.files)}
