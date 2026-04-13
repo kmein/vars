@@ -29,6 +29,9 @@ let
     text = ''
       set -efuo pipefail
 
+      # Set default permissions to only allow the owner to read/write
+      umask 077
+
       PATH=${lib.makeBinPath [ pkgs.coreutils ]}
 
       # make the output directory overridable

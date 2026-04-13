@@ -52,6 +52,11 @@ let
       pkgs.coreutils
     ];
     text = ''
+      set -efuo pipefail
+
+      # Set default permissions to only allow the owner to read/write
+      umask 077
+
       ${authEnv}
 
       ${lib.concatMapStringsSep "\n" (
@@ -174,6 +179,11 @@ let
       pkgs.coreutils
     ];
     text = ''
+      set -efuo pipefail
+
+      # Set default permissions to only allow the owner to read/write
+      umask 077
+
       ${authEnv}
 
       ${lib.concatMapStringsSep "\n" (
