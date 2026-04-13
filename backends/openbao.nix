@@ -83,8 +83,11 @@ let
             fi
           '') (lib.attrValues gen.files)}
 
+          cleanup=""
+          trap 'eval "$cleanup"' EXIT
+
           out=$(mktemp -d)
-          trap 'rm -rf $out' EXIT
+          cleanup="rm -rf '$out'; $cleanup"
           export out
 
           if [ "$all_files_missing" = false ] && [ "$all_files_present" = false ]; then
@@ -100,7 +103,7 @@ let
             echo "All secrets for ${gen.name} are present"
           elif [ "$all_files_missing" = true ]; then
             prompts=$(mktemp -d)
-            trap 'rm -rf $prompts' EXIT
+            cleanup="rm -rf '$prompts'; $cleanup"
             export prompts
             ${lib.concatMapStringsSep "\n" (prompt: ''
               echo ${lib.escapeShellArg prompt.description}
@@ -112,8 +115,8 @@ let
 
           # dependencies: fetch from OpenBao into $in
           in=$(mktemp -d)
+          cleanup="rm -rf '$in'; $cleanup"
           export in
-          trap 'rm -rf $in' EXIT
           ${lib.concatMapStringsSep "\n" (dep: ''
             mkdir -p "$in"/${dep}
             ${lib.concatMapStringsSep "\n" (file: ''
@@ -127,7 +130,7 @@ let
 
           # templates
           templates=$(mktemp -d)
-          trap 'rm -rf $templates' EXIT
+          cleanup="rm -rf '$templates'; $cleanup"
           export templates
           ${lib.concatMapStringsSep "\n" (file: ''
             cp ${lib.escapeShellArg (toString file.template)} "$templates"/${file.name}

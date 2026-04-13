@@ -56,9 +56,12 @@ let
           fi
         '') (lib.attrValues gen.files)}
 
+        cleanup=""
+        trap 'eval "$cleanup"' EXIT
+
         # outputs
         out=$(mktemp -d)
-        trap 'rm -rf $out' EXIT
+        cleanup="rm -rf '$out'; $cleanup"
         export out
 
         if [ $all_files_missing = false ] && [ $all_files_present = false ] ; then
@@ -76,7 +79,7 @@ let
 
           # prompts
           prompts=$(mktemp -d)
-          trap 'rm -rf $prompts' EXIT
+          cleanup="rm -rf '$prompts'; $cleanup"
           export prompts
           ${lib.concatMapStringsSep "\n" (prompt: ''
             echo ${lib.escapeShellArg prompt.description}
@@ -87,7 +90,7 @@ let
 
           # dependencies
           in=$(mktemp -d)
-          trap 'rm -rf $in' EXIT
+          cleanup="rm -rf '$in'; $cleanup"
           export in
           ${lib.concatMapStringsSep "\n" (input: ''
             mkdir -p "$in"/${input}
