@@ -86,7 +86,6 @@ let
           out=$(mktemp -d)
           trap 'rm -rf $out' EXIT
           export out
-          mkdir -p "$out"
 
           if [ "$all_files_missing" = false ] && [ "$all_files_present" = false ]; then
             echo "Inconsistent state for generator: ${gen.name}"
@@ -103,7 +102,6 @@ let
             prompts=$(mktemp -d)
             trap 'rm -rf $prompts' EXIT
             export prompts
-            mkdir -p "$prompts"
             ${lib.concatMapStringsSep "\n" (prompt: ''
               echo ${lib.escapeShellArg prompt.description}
               ${promptCmd.${prompt.type}}
@@ -116,7 +114,6 @@ let
           in=$(mktemp -d)
           export in
           trap 'rm -rf $in' EXIT
-          mkdir -p "$in"
           ${lib.concatMapStringsSep "\n" (dep: ''
             mkdir -p "$in"/${dep}
             ${lib.concatMapStringsSep "\n" (file: ''
@@ -132,7 +129,6 @@ let
           templates=$(mktemp -d)
           trap 'rm -rf $templates' EXIT
           export templates
-          mkdir -p "$templates"
           ${lib.concatMapStringsSep "\n" (file: ''
             cp ${lib.escapeShellArg (toString file.template)} "$templates"/${file.name}
           '') templates}
