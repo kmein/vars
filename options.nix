@@ -37,7 +37,7 @@
                 This name will be used to refer to the generator in other generators.
               '';
               readOnly = true;
-              default = generator.config._module.args.name;
+              default = generator.name;
               defaultText = "Name of the generator";
             };
 
@@ -68,7 +68,7 @@
                         name of the generated file
                       '';
                       readOnly = true;
-                      default = file.config._module.args.name;
+                      default = file.name;
                       defaultText = "Name of the file";
                     };
                     generator = lib.mkOption {
@@ -79,7 +79,7 @@
                       type = lib.types.strMatching "[a-zA-Z0-9:_\\.-]*";
                       readOnly = true;
                       internal = true;
-                      default = generator.config.name;
+                      default = generator.name;
                       defaultText = "Name of the generator";
                     };
                     owner = lib.mkOption {
